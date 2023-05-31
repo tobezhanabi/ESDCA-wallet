@@ -1,7 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import server from "./server";
+import createStringifiedSignature from "./utils/create-signature";
 
-function Transfer({ address, setBalance }) {
+function Transfer({ address, setBalance, privateKey, message }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -11,13 +12,19 @@ function Transfer({ address, setBalance }) {
     evt.preventDefault();
 
     try {
+      const signature = createStringifiedSignature(message, privateKey);
+
       const {
         data: { balance },
-      } = await server.post(`send`, {
-        sender: address,
-        amount: parseInt(sendAmount),
-        recipient,
-      });
+      } = await server.post(
+        `send`,
+        {
+          amount: parseInt(sendAmount),
+          recipient,
+        },
+        { headers: { message, signature, publickey: address } }
+      );
+
       setBalance(balance);
     } catch (ex) {
       alert(ex.response.data.message);
